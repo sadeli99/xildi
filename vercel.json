@@ -2,30 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/**",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
+      "src": "api/*.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    },
-    { 
-      "handle": "filesystem"
-    },
-    { 
-      "src": "/(.*)", 
-      "status": 404, 
-      "dest": "/public/404.html"
+      "src": "/api/embed_url",
+      "dest": "/api/embed_url.py"
     }
   ]
 }
