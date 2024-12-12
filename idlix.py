@@ -5,10 +5,12 @@ from crypto_helper import CryptoJsAes, dec
 class Idlix:
     BASE_WEB_URL = "https://tv4.idlix.asia/"  # Ubah dengan URL dasar yang sesuai
     video_id = None
+    video_type = "movie"  # Default adalah 'movie'
     embed_url = None
 
-    def __init__(self, video_id):
+    def __init__(self, video_id, video_type="movie"):
         self.video_id = video_id
+        self.video_type = video_type  # Menyimpan tipe video yang diterima
 
     def get_embed_url(self):
         if not self.video_id:
@@ -17,13 +19,14 @@ class Idlix:
                 'message': 'Video ID is required'
             }
         try:
+            # Mengirim permintaan POST dengan tipe video yang dinamis
             request = requests.post(
                 url=self.BASE_WEB_URL + "wp-admin/admin-ajax.php",
                 data={
                     "action": "doo_player_ajax",
                     "post": self.video_id,
                     "nume": "1",
-                    "type": "movie",
+                    "type": self.video_type,  # Gunakan tipe yang diterima
                 }
             )
             if request.status_code == 200 and request.json().get('embed_url'):
