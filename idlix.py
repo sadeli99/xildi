@@ -7,6 +7,7 @@ class Idlix:
     video_id = None
     video_type = "movie"  # Default adalah 'movie'
     embed_url = None
+    embed_hash = None  # Tambahkan embed_hash untuk menyimpan ID dari embed_url
 
     def __init__(self, video_id, video_type="movie"):
         self.video_id = video_id
@@ -30,16 +31,23 @@ class Idlix:
                 }
             )
             if request.status_code == 200 and request.json().get('embed_url'):
-                self.embed_url = CryptoJsAes.decrypt(
+                # Decrypt embed_url
+                decrypted_url = CryptoJsAes.decrypt(
                     request.json().get('embed_url'),
                     dec(
                         request.json().get('key'),
                         json.loads(request.json().get('embed_url')).get('m')
                     )
                 )
+                self.embed_url = decrypted_url
+
+                # Ambil bagian hash dari URL embed
+                self.embed_hash = self.extract_hash_from_url(decrypted_url)
+
                 return {
                     'status': True,
-                    'embed_url': self.embed_url
+                    'embed_url': self.embed_url,
+                    'embed_hash': self.embed_hash,  # Sertakan embed_hash di respon
                 }
             else:
                 return {
@@ -51,3 +59,12 @@ class Idlix:
                 'status': False,
                 'message': str(error_get_embed_url)
             }
+
+    @staticmethod
+    def extract_hash_from_url(url):
+        """Ekstrak hash ID dari embed_url."""
+        try:
+            # Ambil bagian terakhir dari URL setelah "/"
+            return url.split("/")[-1]
+        except Exception:
+            return None
