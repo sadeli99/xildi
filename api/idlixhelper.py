@@ -5,7 +5,7 @@ import requests
 class IdlixHelper:
     def __init__(self, video_id):
         self.video_id = video_id
-        self.BASE_WEB_URL = "https://your-website.com/"
+        self.BASE_WEB_URL = "https://tv4.idlix.asia/"
         self.embed_url = None
 
     def get_embed_url(self):
