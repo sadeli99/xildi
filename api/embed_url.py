@@ -1,22 +1,51 @@
-from api.idlixhelper import IdlixHelper
+# api/embed_url.py
+
 import json
+import requests
+from aes import CryptoJsAes, dec
 
-def handler(request):
-    # Mendapatkan parameter video_id dari URL atau body request
-    video_id = request.args.get('video_id')  # atau request.json['video_id'] untuk POST
+class IdlixHelper:
+    BASE_WEB_URL = "https://tv4.idlix.asia/"
 
-    if not video_id:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'status': False, 'message': 'Video ID is required'})
-        }
+    def __init__(self, video_id):
+        self.video_id = video_id
+        self.embed_url = None
 
-    # Membuat instance dan memanggil metode get_embed_url
-    idlix_helper = IdlixHelper(video_id)
-    response = idlix_helper.get_embed_url()
-
-    # Mengembalikan response dalam format JSON
-    return {
-        'statusCode': 200,
-        'body': json.dumps(response)
-    }
+    def get_embed_url(self):
+        if not self.video_id:
+            return {
+                'status': False,
+                'message': 'Video ID is required'
+            }
+        try:
+            request = requests.post(
+                url=self.BASE_WEB_URL + "wp-admin/admin-ajax.php",
+                data={
+                    "action": "doo_player_ajax",
+                    "post": self.video_id,
+                    "nume": "1",
+                    "type": "movie",
+                }
+            )
+            if request.status_code == 200 and request.json().get('embed_url'):
+                self.embed_url = CryptoJsAes.decrypt(
+                    request.json().get('embed_url'),
+                    dec(
+                        request.json().get('key'),
+                        json.loads(request.json().get('embed_url')).get('m')
+                    )
+                )
+                return {
+                    'status': True,
+                    'embed_url': self.embed_url
+                }
+            else:
+                return {
+                    'status': False,
+                    'message': 'Failed to get embed URL'
+                }
+        except Exception as error_get_embed_url:
+            return {
+                'status': False,
+                'message': str(error_get_embed_url)
+            }
