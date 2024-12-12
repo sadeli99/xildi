@@ -1,10 +1,10 @@
 {
-  "name": "idlix-downloader",
+  "name": "kiflix",
   "version": "1.0.0",
-  "description": "Idlix Video Embed URL Downloader",
-  "main": "api/idlix.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node api/idlix.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "base64-js": "^1.5.1",
@@ -12,6 +12,6 @@
     "json-bigint": "^1.0.0",
     "node-fetch": "^2.6.7"
   },
-  "author": "sandroputraa",
-  "license": "MIT"
+  "author": "kie",
+  "license": "ISC"
 }
