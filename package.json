@@ -2,9 +2,9 @@
   "name": "idlix-downloader",
   "version": "1.0.0",
   "description": "Idlix Video Embed URL Downloader",
-  "main": "idlix.js",
+  "main": "api/idlix.js",
   "scripts": {
-    "start": "node idlix.js"
+    "start": "node api/idlix.js"
   },
   "dependencies": {
     "base64-js": "^1.5.1",
