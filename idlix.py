@@ -1,141 +1,113 @@
 import requests
-from urllib.parse import urlparse
 import json
-import base64
-from cryptojs_aes import CryptoJsAes  # Mengimpor kelas CryptoJsAes untuk dekripsi URL yang dienkripsi
+from crypto_helper import CryptoJsAes, dec
+from urllib.parse import urlparse
 
 class Idlix:
-    BASE_WEB_URL = 'https://tv4.idlix.asia/'  # URL dasar dari situs
-
+    BASE_WEB_URL = "https://tv4.idlix.asia/"  # URL dasar untuk API yang digunakan
     def __init__(self, video_id):
-        self.video_id = video_id  # Menyimpan ID video yang diberikan
-        self.embed_url = None  # Inisialisasi variabel embed_url yang nantinya akan berisi URL embed
-        self.m3u8_url = None  # Inisialisasi variabel m3u8_url yang nantinya akan berisi URL m3u8
+        self.video_id = video_id
+        self.embed_url = None
+        self.m3u8_url = None
 
     def get_embed_url(self):
         """
-        Mendapatkan embed URL menggunakan video_id yang diberikan.
-        Setelah mendapatkan embed URL, dekripsi dilakukan menggunakan CryptoJsAes
-        dan hasilnya disimpan dalam self.embed_url.
+        Fungsi ini untuk mendapatkan embed URL dari IDLIX dengan menggunakan video_id yang diberikan.
         """
-        if not self.video_id:  # Mengecek apakah video_id ada
+        if not self.video_id:
             return {
                 'status': False,
-                'message': 'Video ID is required'  # Jika tidak ada video_id, mengembalikan pesan kesalahan
+                'message': 'Video ID is required'
             }
 
         try:
-            # Mengirim POST request ke URL untuk mendapatkan embed_url
+            # Mengirim permintaan POST ke server IDLIX untuk mendapatkan embed URL
             request = requests.post(
                 url=self.BASE_WEB_URL + "wp-admin/admin-ajax.php",
                 data={
                     "action": "doo_player_ajax",
-                    "post": self.video_id,  # Mengirim video_id sebagai data
-                    "nume": "1",  # Parameter lainnya yang diperlukan untuk request
-                    "type": "movie",  # Tipe konten yang diminta (film)
+                    "post": self.video_id,
+                    "nume": "1",
+                    "type": "movie",
                 }
             )
-
-            # Jika request berhasil dan mendapatkan embed_url, lanjutkan proses dekripsi
+            
+            # Mengecek apakah request berhasil dan ada embed_url dalam respons
             if request.status_code == 200 and request.json().get('embed_url'):
+                # Mendekripsi embed_url menggunakan CryptoJsAes dan key yang diberikan
                 self.embed_url = CryptoJsAes.decrypt(
-                    request.json().get('embed_url'),  # Mendekripsi embed_url
-                    self._dec(  # Proses dekripsi lainnya dengan key yang diperlukan
+                    request.json().get('embed_url'),
+                    dec(
                         request.json().get('key'),
                         json.loads(request.json().get('embed_url')).get('m')
                     )
                 )
                 return {
                     'status': True,
-                    'embed_url': self.embed_url  # Mengembalikan embed_url jika berhasil
+                    'embed_url': self.embed_url
                 }
             else:
                 return {
                     'status': False,
-                    'message': 'Failed to get embed URL'  # Jika tidak berhasil, mengembalikan pesan kesalahan
+                    'message': 'Failed to get embed URL'
                 }
+
         except Exception as error_get_embed_url:
-            # Menangani kesalahan jika terjadi kesalahan dalam permintaan atau dekripsi
             return {
                 'status': False,
-                'message': str(error_get_embed_url)  # Mengembalikan pesan kesalahan
+                'message': str(error_get_embed_url)
             }
 
     def get_m3u8_url(self):
         """
-        Setelah embed_url berhasil diperoleh, fungsi ini akan mencari dan mendapatkan m3u8 URL.
-        Ini memungkinkan untuk streaming video dengan m3u8.
+        Fungsi ini untuk mendapatkan URL video dalam format M3U8 berdasarkan embed_url yang telah diperoleh.
         """
-        if not self.embed_url:  # Mengecek apakah embed_url ada
+        if not self.embed_url:
             return {
                 'status': False,
-                'message': 'Embed URL is required'  # Jika tidak ada embed_url, mengembalikan pesan kesalahan
+                'message': 'Embed URL is required'
             }
 
-        # Memproses embed_url untuk mendapatkan video ID atau hash yang diperlukan
+        # Mengambil bagian tertentu dari embed_url (seperti ID video atau path)
         if '/video/' in urlparse(self.embed_url).path:
-            self.embed_url = urlparse(self.embed_url).path.split('/')[2]  # Mengambil bagian dari URL
+            self.embed_url = urlparse(self.embed_url).path.split('/')[2]
         elif urlparse(self.embed_url).query.split('=')[1]:
             self.embed_url = urlparse(self.embed_url).query.split('=')[1]
 
         try:
-            # Mengirim POST request untuk mendapatkan m3u8 URL
+            # Mengirim permintaan POST untuk mendapatkan M3U8 URL berdasarkan embed_url
             request = requests.post(
                 url='https://jeniusplay.com/player/index.php',
                 params={
-                    "data": self.embed_url,  # Menyertakan embed_url dalam parameter data
-                    "do": "getVideo"  # Tindakan yang diminta adalah untuk mendapatkan video
+                    "data": self.embed_url,
+                    "do": "getVideo"
                 },
                 headers={
-                    "Host": "jeniusplay.com",  # Header yang diperlukan untuk permintaan
+                    "Host": "jeniusplay.com",
                     "X-Requested-With": "XMLHttpRequest",
                     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                 },
                 data={
-                    "hash": self.embed_url,  # Menyertakan hash yang diperlukan
-                    "r": self.BASE_WEB_URL,  # URL sumber yang digunakan
+                    "hash": self.embed_url,
+                    "r": self.BASE_WEB_URL,
                 },
             )
 
-            # Jika request berhasil dan terdapat 'videoSource', berarti m3u8 URL ditemukan
+            # Mengecek apakah permintaan berhasil dan ada videoSource (M3U8 URL)
             if request.status_code == 200 and request.json().get('videoSource'):
-                self.m3u8_url = request.json().get('videoSource')  # Menyimpan m3u8 URL
+                self.m3u8_url = request.json().get('videoSource')
                 return {
                     'status': True,
-                    'm3u8_url': self.m3u8_url  # Mengembalikan m3u8 URL jika berhasil
+                    'm3u8_url': self.m3u8_url
                 }
             else:
                 return {
                     'status': False,
-                    'message': 'Failed to get m3u8 URL'  # Jika gagal, mengembalikan pesan kesalahan
+                    'message': 'Failed to get M3U8 URL'
                 }
+
         except Exception as error_get_m3u8_url:
-            # Menangani kesalahan jika terjadi kesalahan dalam permintaan untuk mendapatkan m3u8 URL
             return {
                 'status': False,
-                'message': str(error_get_m3u8_url)  # Mengembalikan pesan kesalahan
+                'message': str(error_get_m3u8_url)
             }
-
-    def _dec(self, r, e):
-        """
-        Fungsi ini digunakan untuk mendekripsi data yang diberikan dengan key dan data yang sesuai.
-        Ini digunakan untuk memproses data yang diberikan oleh server.
-        """
-        r_list = [r[i:i + 2] for i in range(2, len(r), 4)]  # Membagi data key menjadi bagian-bagian
-        m_padded = self._add_base64_padding(e[::-1])  # Memproses data enkripsi dan menambahkan padding base64
-        try:
-            decoded_m = base64.b64decode(m_padded).decode('utf-8')  # Mendekodekan data base64 yang sudah diproses
-        except base64.binascii.Error as e:
-            print(f"Base64 decoding error: {e}")  # Menangani kesalahan decoding
-            return ""
-
-        decoded_m_list = decoded_m.split("|")  # Memisahkan hasil decode berdasarkan '|'
-        # Menggabungkan hasilnya menjadi string dengan format \x untuk setiap karakter
-        return "".join("\\x" + r_list[int(s)] for s in decoded_m_list if s.isdigit() and int(s) < len(r_list))
-
-    @staticmethod
-    def _add_base64_padding(b64_string):
-        """
-        Menambahkan padding pada string base64 agar panjangnya sesuai.
-        """
-        return b64_string + '=' * (-len(b64_string) % 4)  # Menambahkan padding '=' jika perlu
