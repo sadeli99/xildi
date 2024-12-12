@@ -1,6 +1,6 @@
-const { dec } = require('./CryptoJsAes');
 const fetch = require('node-fetch');
 const CryptoJsAes = require('./CryptoJsAes');
+const { dec } = require('./dec');  // Pastikan Anda memisahkan fungsi `dec` seperti pada kode sebelumnya
 
 class Idlix {
     constructor(videoId) {
@@ -18,6 +18,7 @@ class Idlix {
         }
 
         try {
+            // Mengirim POST request ke URL yang ditentukan
             const response = await fetch(`${this.BASE_WEB_URL}wp-admin/admin-ajax.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -29,12 +30,16 @@ class Idlix {
                 })
             });
 
-            const jsonResponse = await response.json();
+            const jsonResponse = await response.json();  // Parse response JSON
 
             if (response.status === 200 && jsonResponse.embed_url) {
+                // Jika berhasil, lakukan dekripsi URL menggunakan CryptoJsAes
                 this.embed_url = CryptoJsAes.decrypt(
                     jsonResponse.embed_url,
-                    dec(jsonResponse.key, JSON.parse(jsonResponse.embed_url).m)
+                    dec(
+                        jsonResponse.key,
+                        JSON.parse(jsonResponse.embed_url).m
+                    )
                 );
 
                 return {
@@ -48,6 +53,7 @@ class Idlix {
                 };
             }
         } catch (error) {
+            // Tangani error jika terjadi
             return {
                 status: false,
                 message: error.toString()
