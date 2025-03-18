@@ -3,7 +3,7 @@ import json
 from crypto_helper import CryptoJsAes, dec
 
 class Idlix:
-    BASE_WEB_URL = "https://tv4.idlix.asia/"  # Ubah dengan URL dasar yang sesuai
+    BASE_WEB_URL = "https://tv7.idlix.asia/"  # Ubah dengan URL dasar yang sesuai
     video_id = None
     video_type = "movie"  # Default adalah 'movie'
     embed_url = None
