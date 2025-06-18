@@ -30,41 +30,55 @@ class Idlix:
                     "type": self.video_type,  # Gunakan tipe yang diterima
                 }
             )
-            if request.status_code == 200 and request.json().get('embed_url'):
-                # Decrypt embed_url
-                decrypted_url = CryptoJsAes.decrypt(
-                    request.json().get('embed_url'),
-                    dec(
-                        request.json().get('key'),
-                        json.loads(request.json().get('embed_url')).get('m')
-                    )
-                )
-                self.embed_url = decrypted_url
 
-                # Ambil bagian hash dari URL embed
-               # self.embed_hash = self.extract_hash_from_url(decrypted_url)
+            if request.status_code == 200:
+                try:
+                    json_data = request.json()
+                    embed_encrypted = json_data.get('embed_url')
+                    key = json_data.get('key')
 
-                return {
-                    'status': True,
-                    'embed_url': self.embed_url
-                    # 'embed_hash': self.embed_hash,  # Sertakan embed_hash di respon
-                }
+                    if embed_encrypted and key:
+                        # Decrypt embed_url
+                        decrypted_url = CryptoJsAes.decrypt(
+                            embed_encrypted,
+                            dec(embed_encrypted, json.loads(embed_encrypted).get('m'))
+                        )
+                        self.embed_url = decrypted_url
+                        self.embed_hash = self.extract_hash_from_url(decrypted_url)
+
+                        return {
+                            'status': True,
+                            'embed_url': self.embed_url,
+                            'embed_hash': self.embed_hash,
+                        }
+                    else:
+                        return {
+                            'status': False,
+                            'message': 'Embed URL or key missing in response',
+                            'debug': json_data
+                        }
+                except Exception as parse_error:
+                    return {
+                        'status': False,
+                        'message': f"Error parsing response or decrypting embed URL: {parse_error}",
+                        'debug': request.text
+                    }
             else:
                 return {
                     'status': False,
-                    'message': 'Failed to get embed URL'
+                    'message': f"Request failed with status code {request.status_code}",
+                    'debug': request.text
                 }
         except Exception as error_get_embed_url:
             return {
                 'status': False,
-                'message': str(error_get_embed_url)
+                'message': f"Exception occurred: {str(error_get_embed_url)}"
             }
 
     @staticmethod
     def extract_hash_from_url(url):
         """Ekstrak hash ID dari embed_url."""
         try:
-            # Ambil bagian terakhir dari URL setelah "/"
             return url.split("/")[-1]
-        except Exception:
+        except Exception as e:
             return None
