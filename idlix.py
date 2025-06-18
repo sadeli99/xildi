@@ -42,12 +42,12 @@ class Idlix:
                 self.embed_url = decrypted_url
 
                 # Ambil bagian hash dari URL embed
-                self.embed_hash = self.extract_hash_from_url(decrypted_url)
+               # self.embed_hash = self.extract_hash_from_url(decrypted_url)
 
                 return {
                     'status': True,
-                    'embed_url': self.embed_url,
-                    'embed_hash': self.embed_hash,  # Sertakan embed_hash di respon
+                    'embed_url': self.embed_url
+                    # 'embed_hash': self.embed_hash,  # Sertakan embed_hash di respon
                 }
             else:
                 return {
