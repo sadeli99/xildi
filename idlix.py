@@ -14,35 +14,38 @@ class Idlix:
         self.key = embed_data.get("key")
 
     def process_embed(self):
-        if not self.embed_encrypted or not self.key:
-            return {
-                "status": False,
-                "message": "Embed URL atau key tidak ditemukan"
-            }
+    if not self.embed_encrypted or not self.key:
+        return {
+            "status": False,
+            "message": "Embed URL atau key tidak ditemukan"
+        }
 
-        try:
-            # embed_url ini adalah string JSON terenkripsi → parse
-            embed_json = json.loads(self.embed_encrypted)
+    try:
+        # embed_url adalah JSON terenkripsi → parse
+        embed_json = json.loads(self.embed_encrypted)
 
-            # Dekripsi URL
-            decrypted_url = CryptoJsAes.decrypt(
-                self.embed_encrypted,
-                dec(self.embed_encrypted, embed_json.get("m"))
-            )
+        # Decode key dari format \xNN ke string biasa
+        decoded_key = self.key.encode('utf-8').decode('unicode_escape')
 
-            self.embed_url = decrypted_url
-            self.embed_hash = self.extract_hash_from_url(decrypted_url)
+        # Dekripsi URL
+        decrypted_url = CryptoJsAes.decrypt(
+            self.embed_encrypted,
+            decoded_key
+        )
 
-            return {
-                "status": True,
-                "embed_url": self.embed_url,
-                "embed_hash": self.embed_hash
-            }
-        except Exception as e:
-            return {
-                "status": False,
-                "message": f"Gagal dekripsi: {e}"
-            }
+        self.embed_url = decrypted_url
+        self.embed_hash = self.extract_hash_from_url(decrypted_url)
+
+        return {
+            "status": True,
+            "embed_url": self.embed_url,
+            "embed_hash": self.embed_hash
+        }
+    except Exception as e:
+        return {
+            "status": False,
+            "message": f"Gagal dekripsi: {e}"
+        }
 
     @staticmethod
     def extract_hash_from_url(url):
