@@ -20,7 +20,7 @@ class Idlix:
                 'message': 'Video ID is required'
             }
         try:
-            # Mengirim permintaan POST dengan tipe video yang dinamis
+            # Mengirim permintaan POST dengan tipe video yang dinamis + headers
             request = requests.post(
                 url=self.BASE_WEB_URL + "wp-admin/admin-ajax.php",
                 data={
@@ -28,6 +28,10 @@ class Idlix:
                     "post": self.video_id,
                     "nume": "1",
                     "type": self.video_type,  # Gunakan tipe yang diterima
+                },
+                headers={
+                    "Referer": "https://tv6.idlixku.com/movie/halabala-2025/",
+                    "Content-Type": "application/x-www-form-urlencoded"
                 }
             )
 
@@ -80,5 +84,5 @@ class Idlix:
         """Ekstrak hash ID dari embed_url."""
         try:
             return url.split("/")[-1]
-        except Exception as e:
+        except Exception:
             return None
