@@ -5,19 +5,12 @@ app = Flask(__name__)
 
 @app.route('/get_embed_url', methods=['POST'])
 def get_embed_url():
-    # Mengambil data JSON dari body request
-    data = request.json
-    video_id = data.get('video_id')
-    video_type = data.get('video_type', 'movie')  # Default 'movie' jika tidak ada
+    data = request.json  # ini sudah dict
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
 
-    # Memastikan video_id ada
-    if not video_id:
-        return jsonify({"error": "Missing 'video_id'"}), 400
-
-    # Membuat instance Idlix dengan video_id dan video_type
-    idlix_instance = Idlix(video_id, video_type)
-    result = idlix_instance.get_embed_url()
-
+    idlix_instance = Idlix(data)
+    result = idlix_instance.process_embed()
     return jsonify(result)
 
 if __name__ == '__main__':
